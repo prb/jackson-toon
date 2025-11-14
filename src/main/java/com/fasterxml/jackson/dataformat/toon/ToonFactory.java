@@ -196,6 +196,11 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public JsonToken getLastClearedToken() {
+            return null; // Simplified - not tracking cleared tokens
+        }
+
+        @Override
         public String getCurrentName() throws IOException {
             return _toonParser.getTextValue();
         }
@@ -356,6 +361,69 @@ public class ToonFactory extends JsonFactory {
         public Version version() {
             return com.fasterxml.jackson.core.util.VersionUtil.versionFor(getClass());
         }
+
+        @Override
+        public JsonToken nextValue() throws IOException {
+            JsonToken t = nextToken();
+            if (t == JsonToken.FIELD_NAME) {
+                t = nextToken();
+            }
+            return t;
+        }
+
+        @Override
+        public JsonParser skipChildren() throws IOException {
+            if (_currentToken != JsonToken.START_OBJECT && _currentToken != JsonToken.START_ARRAY) {
+                return this;
+            }
+            int open = 1;
+            while (true) {
+                JsonToken t = nextToken();
+                if (t == null) {
+                    return this;
+                }
+                if (t.isStructStart()) {
+                    ++open;
+                } else if (t.isStructEnd()) {
+                    if (--open == 0) {
+                        return this;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public int getCurrentTokenId() {
+            JsonToken t = _currentToken;
+            return (t == null) ? JsonTokenId.ID_NO_TOKEN : t.id();
+        }
+
+        @Override
+        public boolean hasCurrentToken() {
+            return _currentToken != null;
+        }
+
+        @Override
+        public boolean hasTokenId(int id) {
+            return _currentToken != null && _currentToken.id() == id;
+        }
+
+        @Override
+        public boolean hasToken(JsonToken t) {
+            return _currentToken == t;
+        }
+
+        @Override
+        public void clearCurrentToken() {
+            if (_currentToken != null) {
+                _currentToken = null;
+            }
+        }
+
+        @Override
+        public Object getEmbeddedObject() throws IOException {
+            return null;
+        }
     }
 
     /**
@@ -401,6 +469,11 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeStartArray(int size) throws IOException {
+            _toonGenerator.writeStartArray();
+        }
+
+        @Override
         public void writeEndArray() throws IOException {
             _toonGenerator.writeEndArray();
         }
@@ -421,8 +494,18 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeFieldName(SerializableString name) throws IOException {
+            _toonGenerator.writeFieldName(name.getValue());
+        }
+
+        @Override
         public void writeString(String text) throws IOException {
             _toonGenerator.writeString(text);
+        }
+
+        @Override
+        public void writeString(SerializableString text) throws IOException {
+            _toonGenerator.writeString(text.getValue());
         }
 
         @Override
@@ -576,6 +659,11 @@ public class ToonFactory extends JsonFactory {
 
         @Override
         public void writeBinary(Base64Variant variant, byte[] data, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
+
+        @Override
+        public int writeBinary(Base64Variant variant, InputStream data, int dataLength) throws IOException {
             throw new UnsupportedOperationException("Binary values not supported in TOON format");
         }
     }
