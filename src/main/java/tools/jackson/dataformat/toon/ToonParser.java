@@ -43,6 +43,10 @@ public class ToonParser {
     private final ToonLexer _lexer;
     private ToonToken _currentToken;
     private ToonToken _peekToken;
+    private String _currentTokenText;      // Text of current token
+    private Object _currentTokenValue;     // Value of current token
+    private String _peekTokenText;         // Text of peek token
+    private Object _peekTokenValue;        // Value of peek token
 
     private final Deque<ParsingContext> _contextStack;
     private ParsingContext _context;
@@ -61,6 +65,7 @@ public class ToonParser {
         NEED_CONTENT          // Expecting content (array elements, etc.)
     }
     private State _state;
+    private boolean _rootParsed;  // Track if we've parsed the root value
 
     // ========================================================================
     // Constructor
@@ -75,10 +80,16 @@ public class ToonParser {
         this._strictMode = strictMode;
         this._contextStack = new ArrayDeque<>();
         this._context = new ParsingContext(); // Root context
+        this._state = State.NEED_CONTENT;
+        this._rootParsed = false;
 
         // Initialize token stream
         _currentToken = _lexer.nextToken();
+        _currentTokenText = _lexer.getTokenText();
+        _currentTokenValue = _lexer.getTokenValue();
         _peekToken = _lexer.nextToken();
+        _peekTokenText = _lexer.getTokenText();
+        _peekTokenValue = _lexer.getTokenValue();
     }
 
     // ========================================================================
@@ -90,7 +101,12 @@ public class ToonParser {
      */
     public Event nextEvent() throws IOException {
         if (_context.getType() == ParsingContext.Type.ROOT) {
+            // Check if we've already parsed the root
+            if (_rootParsed) {
+                return Event.EOF;
+            }
             // Determine root form and parse
+            _rootParsed = true;
             return parseRoot();
         }
 
@@ -147,7 +163,11 @@ public class ToonParser {
 
     private void advance() throws IOException {
         _currentToken = _peekToken;
+        _currentTokenText = _peekTokenText;
+        _currentTokenValue = _peekTokenValue;
         _peekToken = _lexer.nextToken();
+        _peekTokenText = _lexer.getTokenText();
+        _peekTokenValue = _lexer.getTokenValue();
     }
 
     private ToonToken peek() {
@@ -184,11 +204,13 @@ public class ToonParser {
             // Empty document = empty object
             _currentEvent = Event.START_OBJECT;
             _context = _context.createChildObject(0);
+            _state = State.NEED_FIELD;
             return _currentEvent;
         }
 
         // Check for root array (starts with [N]:)
         if (_currentToken == ToonToken.LBRACKET) {
+            _state = State.NEED_CONTENT;
             return parseArray();
         }
 
@@ -200,6 +222,7 @@ public class ToonParser {
         // Otherwise, parse as root object
         _currentEvent = Event.START_OBJECT;
         _context = _context.createChildObject(0);
+        _state = State.NEED_FIELD;
         return _currentEvent;
     }
 
@@ -215,20 +238,29 @@ public class ToonParser {
             || _lexer.getIndentLevel() < _context.getExpectedIndentLevel()) {
             _currentEvent = Event.END_OBJECT;
             _context = _context.getParent();
+            _state = State.NEED_CONTENT;
             return _currentEvent;
         }
 
-        // Parse field
-        return parseField();
+        // State machine for field parsing
+        if (_state == State.NEED_FIELD || _state == State.NEED_CONTENT) {
+            // Parse and emit field name
+            return parseFieldName();
+        } else if (_state == State.NEED_VALUE) {
+            // Parse and emit value
+            return parseFieldValue();
+        }
+
+        throw new IOException("Invalid parser state: " + _state);
     }
 
-    private Event parseField() throws IOException {
+    private Event parseFieldName() throws IOException {
         // Parse key
         if (!_currentToken.isValue()) {
             throw new IOException("Expected field name at line " + _lexer.getLine());
         }
 
-        _textValue = _lexer.getTokenText();
+        _textValue = _currentTokenText;
         _currentEvent = Event.FIELD_NAME;
         _context.setCurrentKey(_textValue);
         advance();
@@ -236,7 +268,13 @@ public class ToonParser {
         // Expect colon
         expect(ToonToken.COLON);
 
-        // Check what follows
+        // Transition to NEED_VALUE state
+        _state = State.NEED_VALUE;
+        return _currentEvent;
+    }
+
+    private Event parseFieldValue() throws IOException {
+        // Check what follows the colon
         if (_currentToken == ToonToken.NEWLINE) {
             // Nested structure coming
             advance(); // Consume newline
@@ -247,25 +285,31 @@ public class ToonParser {
                 // Check if array or nested object
                 if (_currentToken == ToonToken.LBRACKET) {
                     // It's an array
+                    _state = State.NEED_CONTENT;
                     return parseArray();
                 } else {
                     // It's a nested object
                     _currentEvent = Event.START_OBJECT;
                     _context = _context.createChildObject(_lexer.getIndentLevel());
+                    _state = State.NEED_FIELD;
                     return _currentEvent;
                 }
             } else {
                 // Empty value - treat as empty object
                 _currentEvent = Event.START_OBJECT;
                 _context = _context.createChildObject(_lexer.getIndentLevel());
+                _state = State.NEED_FIELD;
                 return _currentEvent;
             }
         } else if (_currentToken == ToonToken.LBRACKET) {
             // Array on same line
+            _state = State.NEED_CONTENT;
             return parseArray();
         } else {
             // Simple value
-            return parsePrimitiveValue();
+            Event event = parsePrimitiveValue();
+            _state = State.NEED_FIELD; // Back to parsing fields
+            return event;
         }
     }
 
@@ -281,7 +325,7 @@ public class ToonParser {
         if (_currentToken != ToonToken.NUMBER) {
             throw new IOException("Expected array length at line " + _lexer.getLine());
         }
-        int length = ((Number) _lexer.getTokenValue()).intValue();
+        int length = ((Number) _currentTokenValue).intValue();
         advance();
 
         // Check for delimiter marker
@@ -337,7 +381,7 @@ public class ToonParser {
         List<String> fields = new ArrayList<>();
         expect(ToonToken.LBRACE);
 
-        fields.add(_lexer.getTokenText());
+        fields.add(_currentTokenText);
         advance();
 
         while (_currentToken != ToonToken.RBRACE) {
@@ -352,7 +396,7 @@ public class ToonParser {
             advance();
 
             // Get field name
-            fields.add(_lexer.getTokenText());
+            fields.add(_currentTokenText);
             advance();
         }
 
@@ -380,6 +424,7 @@ public class ToonParser {
             expect(ToonToken.NEWLINE);
             expect(ToonToken.DEDENT);
             _context = _context.getParent();
+            _state = State.NEED_CONTENT;
             return _currentEvent;
         }
 
@@ -420,6 +465,7 @@ public class ToonParser {
 
             expect(ToonToken.DEDENT);
             _context = _context.getParent();
+            _state = State.NEED_CONTENT;
             return _currentEvent;
         }
 
@@ -427,6 +473,7 @@ public class ToonParser {
         expect(ToonToken.INDENT);
         _currentEvent = Event.START_OBJECT;
         _context = _context.createTabularRow();
+        _state = State.NEED_FIELD; // Start emitting field names
         return _currentEvent;
     }
 
@@ -435,19 +482,42 @@ public class ToonParser {
             // End of row
             _currentEvent = Event.END_OBJECT;
             expect(ToonToken.NEWLINE);
-            ParsingContext rowContext = _context;
             _context = _context.getParent();
             _context.incrementIndex();
+            _state = State.NEED_CONTENT;
             return _currentEvent;
         }
 
-        // Emit field name
-        _textValue = _context.getCurrentFieldName();
-        _currentEvent = Event.FIELD_NAME;
-        _context.incrementFieldIndex();
+        // Alternate between field names and values
+        if (_state == State.NEED_FIELD || _state == State.NEED_CONTENT) {
+            // Emit field name
+            _textValue = _context.getCurrentFieldName();
+            _currentEvent = Event.FIELD_NAME;
+            _state = State.NEED_VALUE;
+            return _currentEvent;
+        } else if (_state == State.NEED_VALUE) {
+            // Parse and emit value
+            Event event = parsePrimitiveValue();
+            _context.incrementFieldIndex();
 
-        // Note: value will be emitted on next call
-        return _currentEvent;
+            // Check for delimiter or end of row
+            char delim = _context.getDelimiter();
+            if (_context.getCurrentFieldIndex() < _context.getFieldNames().length) {
+                // Expect delimiter
+                if (delim == ',' && _currentToken == ToonToken.COMMA) {
+                    advance();
+                } else if (delim == '|' && _currentToken == ToonToken.PIPE) {
+                    advance();
+                } else if (delim == '\t' && _currentToken == ToonToken.HTAB) {
+                    advance();
+                }
+            }
+
+            _state = State.NEED_FIELD; // Next field name
+            return event;
+        }
+
+        throw new IOException("Invalid state in tabular row: " + _state);
     }
 
     // ========================================================================
@@ -468,6 +538,7 @@ public class ToonParser {
 
             expect(ToonToken.DEDENT);
             _context = _context.getParent();
+            _state = State.NEED_CONTENT;
             return _currentEvent;
         }
 
@@ -477,12 +548,15 @@ public class ToonParser {
         if (_currentToken == ToonToken.LBRACKET) {
             // Nested array
             _context.incrementIndex();
+            _state = State.NEED_CONTENT;
             return parseArray();
         } else if (_currentToken.isValue() && peek() == ToonToken.COLON) {
             // Object item
             _currentEvent = Event.START_OBJECT;
+            ParsingContext parent = _context;
             _context = _context.createListItemObject(_lexer.getIndentLevel() + 1);
-            _context.incrementIndex();
+            parent.incrementIndex();
+            _state = State.NEED_FIELD;
             return _currentEvent;
         } else {
             // Primitive item
@@ -504,14 +578,14 @@ public class ToonParser {
 
     private Event parsePrimitiveValue() throws IOException {
         if (_currentToken == ToonToken.STRING) {
-            _textValue = (String) _lexer.getTokenValue();
+            _textValue = (String) _currentTokenValue;
             _currentEvent = Event.VALUE_STRING;
             advance();
             return _currentEvent;
         }
 
         if (_currentToken == ToonToken.NUMBER) {
-            _numberValue = (Number) _lexer.getTokenValue();
+            _numberValue = (Number) _currentTokenValue;
             if (_numberValue instanceof Long) {
                 _currentEvent = Event.VALUE_NUMBER_INT;
             } else {
@@ -522,7 +596,7 @@ public class ToonParser {
         }
 
         if (_currentToken == ToonToken.BOOLEAN) {
-            boolean value = (Boolean) _lexer.getTokenValue();
+            boolean value = (Boolean) _currentTokenValue;
             _currentEvent = value ? Event.VALUE_TRUE : Event.VALUE_FALSE;
             advance();
             return _currentEvent;
@@ -536,7 +610,7 @@ public class ToonParser {
 
         if (_currentToken == ToonToken.IDENTIFIER) {
             // Unquoted string
-            _textValue = (String) _lexer.getTokenValue();
+            _textValue = (String) _currentTokenValue;
             _currentEvent = Event.VALUE_STRING;
             advance();
             return _currentEvent;
