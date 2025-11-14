@@ -778,10 +778,5 @@ public class ToonFactory extends JsonFactory {
         public void writePOJO(Object pojo) throws IOException {
             writeObject(pojo);
         }
-
-        @Override
-        public void writeNull() throws IOException {
-            _toonGenerator.writeNull();
-        }
     }
 }
