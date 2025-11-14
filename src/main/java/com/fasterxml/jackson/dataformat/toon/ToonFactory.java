@@ -223,6 +223,12 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public boolean hasTextCharacters() {
+            // We don't use char arrays for efficiency, always use String
+            return false;
+        }
+
+        @Override
         public Number getNumberValue() throws IOException {
             return _toonParser.getNumberValue();
         }
@@ -324,6 +330,31 @@ public class ToonFactory extends JsonFactory {
             // TOON format doesn't natively support binary data
             // Could be implemented by base64 decoding string values
             throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
+
+        @Override
+        public JsonStreamContext getParsingContext() {
+            return null; // Simplified - full implementation would track context
+        }
+
+        @Override
+        public JsonLocation getTokenLocation() {
+            return JsonLocation.NA;
+        }
+
+        @Override
+        public JsonLocation getCurrentLocation() {
+            return JsonLocation.NA;
+        }
+
+        @Override
+        public void overrideCurrentName(String name) {
+            // Not implemented
+        }
+
+        @Override
+        public Version version() {
+            return com.fasterxml.jackson.core.util.VersionUtil.versionFor(getClass());
         }
     }
 
@@ -438,6 +469,15 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeNumber(java.math.BigInteger v) throws IOException {
+            if (v == null) {
+                writeNull();
+            } else {
+                _toonGenerator.writeNumber(v.longValue());
+            }
+        }
+
+        @Override
         public void writeBoolean(boolean state) throws IOException {
             _toonGenerator.writeBoolean(state);
         }
@@ -486,6 +526,57 @@ public class ToonFactory extends JsonFactory {
                 throw new IllegalStateException("No ObjectCodec defined for the generator, cannot serialize Object");
             }
             getCodec().writeValue(this, pojo);
+        }
+
+        @Override
+        public JsonStreamContext getOutputContext() {
+            return null; // Simplified - full implementation would track context
+        }
+
+        @Override
+        public Version version() {
+            return com.fasterxml.jackson.core.util.VersionUtil.versionFor(getClass());
+        }
+
+        @Override
+        public JsonGenerator useDefaultPrettyPrinter() {
+            // TOON has its own formatting - pretty printing not applicable
+            return this;
+        }
+
+        @Override
+        public void writeString(char[] text, int offset, int len) throws IOException {
+            writeString(new String(text, offset, len));
+        }
+
+        @Override
+        public void writeRawUTF8String(byte[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRawUTF8String not supported");
+        }
+
+        @Override
+        public void writeUTF8String(byte[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeUTF8String not supported");
+        }
+
+        @Override
+        public void writeRaw(String text) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeRaw(char[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeRaw(char c) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeBinary(Base64Variant variant, byte[] data, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("Binary values not supported in TOON format");
         }
     }
 }
