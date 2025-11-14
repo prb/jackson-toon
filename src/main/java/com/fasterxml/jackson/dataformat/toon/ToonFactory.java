@@ -474,12 +474,27 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeStartArray(Object forValue) throws IOException {
+            _toonGenerator.writeStartArray();
+        }
+
+        @Override
+        public void writeStartArray(Object forValue, int size) throws IOException {
+            _toonGenerator.writeStartArray();
+        }
+
+        @Override
         public void writeEndArray() throws IOException {
             _toonGenerator.writeEndArray();
         }
 
         @Override
         public void writeStartObject() throws IOException {
+            _toonGenerator.writeStartObject();
+        }
+
+        @Override
+        public void writeStartObject(Object forValue) throws IOException {
             _toonGenerator.writeStartObject();
         }
 
@@ -496,6 +511,38 @@ public class ToonFactory extends JsonFactory {
         @Override
         public void writeFieldName(SerializableString name) throws IOException {
             _toonGenerator.writeFieldName(name.getValue());
+        }
+
+        @Override
+        public void writeFieldId(long id) throws IOException {
+            writeFieldName(Long.toString(id));
+        }
+
+        @Override
+        public void writeArray(int[] array, int offset, int length) throws IOException {
+            writeStartArray(array, length);
+            for (int i = offset; i < offset + length; i++) {
+                writeNumber(array[i]);
+            }
+            writeEndArray();
+        }
+
+        @Override
+        public void writeArray(long[] array, int offset, int length) throws IOException {
+            writeStartArray(array, length);
+            for (int i = offset; i < offset + length; i++) {
+                writeNumber(array[i]);
+            }
+            writeEndArray();
+        }
+
+        @Override
+        public void writeArray(double[] array, int offset, int length) throws IOException {
+            writeStartArray(array, length);
+            for (int i = offset; i < offset + length; i++) {
+                writeNumber(array[i]);
+            }
+            writeEndArray();
         }
 
         @Override
@@ -658,6 +705,21 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeRawValue(String text) throws IOException {
+            throw new UnsupportedOperationException("writeRawValue not supported in TOON format");
+        }
+
+        @Override
+        public void writeRawValue(String text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRawValue not supported in TOON format");
+        }
+
+        @Override
+        public void writeRawValue(char[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRawValue not supported in TOON format");
+        }
+
+        @Override
         public void writeBinary(Base64Variant variant, byte[] data, int offset, int len) throws IOException {
             throw new UnsupportedOperationException("Binary values not supported in TOON format");
         }
@@ -665,6 +727,61 @@ public class ToonFactory extends JsonFactory {
         @Override
         public int writeBinary(Base64Variant variant, InputStream data, int dataLength) throws IOException {
             throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
+
+        @Override
+        public void writeOmittedField(String fieldName) throws IOException {
+            // Do nothing - field is omitted
+        }
+
+        @Override
+        public boolean canUseSchema(FormatSchema schema) {
+            return false;
+        }
+
+        @Override
+        public boolean canWriteTypeId() {
+            return false;
+        }
+
+        @Override
+        public boolean canWriteObjectId() {
+            return false;
+        }
+
+        @Override
+        public boolean canWriteBinaryNatively() {
+            return false;
+        }
+
+        @Override
+        public boolean canOmitFields() {
+            return true;
+        }
+
+        @Override
+        public void writeTypeId(Object id) throws IOException {
+            // Not supported
+        }
+
+        @Override
+        public void writeObjectId(Object id) throws IOException {
+            // Not supported
+        }
+
+        @Override
+        public void writeObjectRef(Object id) throws IOException {
+            // Not supported
+        }
+
+        @Override
+        public void writePOJO(Object pojo) throws IOException {
+            writeObject(pojo);
+        }
+
+        @Override
+        public void writeNull() throws IOException {
+            _toonGenerator.writeNull();
         }
     }
 }
