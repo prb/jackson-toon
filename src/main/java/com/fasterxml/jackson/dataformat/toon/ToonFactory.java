@@ -695,6 +695,11 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeRaw(String text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
         public void writeRaw(char[] text, int offset, int len) throws IOException {
             throw new UnsupportedOperationException("writeRaw not supported in TOON format");
         }
