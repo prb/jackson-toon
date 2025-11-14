@@ -3,6 +3,7 @@ package com.fasterxml.jackson.dataformat.toon;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.io.IOContext;
 import java.io.*;
+import java.math.BigDecimal;
 
 /**
  * Factory for creating TOON format parsers and generators.
@@ -195,6 +196,11 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public JsonToken getLastClearedToken() {
+            return null; // Simplified - not tracking cleared tokens
+        }
+
+        @Override
         public String getCurrentName() throws IOException {
             return _toonParser.getTextValue();
         }
@@ -219,6 +225,12 @@ public class ToonFactory extends JsonFactory {
         @Override
         public int getTextOffset() throws IOException {
             return 0;
+        }
+
+        @Override
+        public boolean hasTextCharacters() {
+            // We don't use char arrays for efficiency, always use String
+            return false;
         }
 
         @Override
@@ -255,6 +267,42 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public float getFloatValue() throws IOException {
+            Number n = getNumberValue();
+            return n != null ? n.floatValue() : 0.0f;
+        }
+
+        @Override
+        public BigDecimal getDecimalValue() throws IOException {
+            Number n = getNumberValue();
+            if (n == null) {
+                return null;
+            }
+            if (n instanceof BigDecimal) {
+                return (BigDecimal) n;
+            }
+            if (n instanceof Double || n instanceof Float) {
+                return BigDecimal.valueOf(n.doubleValue());
+            }
+            return BigDecimal.valueOf(n.longValue());
+        }
+
+        @Override
+        public java.math.BigInteger getBigIntegerValue() throws IOException {
+            Number n = getNumberValue();
+            if (n == null) {
+                return null;
+            }
+            if (n instanceof java.math.BigInteger) {
+                return (java.math.BigInteger) n;
+            }
+            if (n instanceof java.math.BigDecimal) {
+                return ((java.math.BigDecimal) n).toBigInteger();
+            }
+            return java.math.BigInteger.valueOf(n.longValue());
+        }
+
+        @Override
         public void close() throws IOException {
             _toonParser.close();
         }
@@ -272,6 +320,109 @@ public class ToonFactory extends JsonFactory {
         @Override
         public void setCodec(ObjectCodec c) {
             // Not implemented
+        }
+
+        @Override
+        public String getValueAsString(String defaultValue) throws IOException {
+            if (_currentToken == JsonToken.VALUE_STRING) {
+                return getText();
+            }
+            return defaultValue;
+        }
+
+        @Override
+        public byte[] getBinaryValue(Base64Variant variant) throws IOException {
+            // TOON format doesn't natively support binary data
+            // Could be implemented by base64 decoding string values
+            throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
+
+        @Override
+        public JsonStreamContext getParsingContext() {
+            return null; // Simplified - full implementation would track context
+        }
+
+        @Override
+        public JsonLocation getTokenLocation() {
+            return JsonLocation.NA;
+        }
+
+        @Override
+        public JsonLocation getCurrentLocation() {
+            return JsonLocation.NA;
+        }
+
+        @Override
+        public void overrideCurrentName(String name) {
+            // Not implemented
+        }
+
+        @Override
+        public Version version() {
+            return com.fasterxml.jackson.core.util.VersionUtil.versionFor(getClass());
+        }
+
+        @Override
+        public JsonToken nextValue() throws IOException {
+            JsonToken t = nextToken();
+            if (t == JsonToken.FIELD_NAME) {
+                t = nextToken();
+            }
+            return t;
+        }
+
+        @Override
+        public JsonParser skipChildren() throws IOException {
+            if (_currentToken != JsonToken.START_OBJECT && _currentToken != JsonToken.START_ARRAY) {
+                return this;
+            }
+            int open = 1;
+            while (true) {
+                JsonToken t = nextToken();
+                if (t == null) {
+                    return this;
+                }
+                if (t.isStructStart()) {
+                    ++open;
+                } else if (t.isStructEnd()) {
+                    if (--open == 0) {
+                        return this;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public int getCurrentTokenId() {
+            JsonToken t = _currentToken;
+            return (t == null) ? JsonTokenId.ID_NO_TOKEN : t.id();
+        }
+
+        @Override
+        public boolean hasCurrentToken() {
+            return _currentToken != null;
+        }
+
+        @Override
+        public boolean hasTokenId(int id) {
+            return _currentToken != null && _currentToken.id() == id;
+        }
+
+        @Override
+        public boolean hasToken(JsonToken t) {
+            return _currentToken == t;
+        }
+
+        @Override
+        public void clearCurrentToken() {
+            if (_currentToken != null) {
+                _currentToken = null;
+            }
+        }
+
+        @Override
+        public Object getEmbeddedObject() throws IOException {
+            return null;
         }
     }
 
@@ -318,12 +469,32 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeStartArray(int size) throws IOException {
+            _toonGenerator.writeStartArray();
+        }
+
+        @Override
+        public void writeStartArray(Object forValue) throws IOException {
+            _toonGenerator.writeStartArray();
+        }
+
+        @Override
+        public void writeStartArray(Object forValue, int size) throws IOException {
+            _toonGenerator.writeStartArray();
+        }
+
+        @Override
         public void writeEndArray() throws IOException {
             _toonGenerator.writeEndArray();
         }
 
         @Override
         public void writeStartObject() throws IOException {
+            _toonGenerator.writeStartObject();
+        }
+
+        @Override
+        public void writeStartObject(Object forValue) throws IOException {
             _toonGenerator.writeStartObject();
         }
 
@@ -338,8 +509,50 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public void writeFieldName(SerializableString name) throws IOException {
+            _toonGenerator.writeFieldName(name.getValue());
+        }
+
+        @Override
+        public void writeFieldId(long id) throws IOException {
+            writeFieldName(Long.toString(id));
+        }
+
+        @Override
+        public void writeArray(int[] array, int offset, int length) throws IOException {
+            writeStartArray(array, length);
+            for (int i = offset; i < offset + length; i++) {
+                writeNumber(array[i]);
+            }
+            writeEndArray();
+        }
+
+        @Override
+        public void writeArray(long[] array, int offset, int length) throws IOException {
+            writeStartArray(array, length);
+            for (int i = offset; i < offset + length; i++) {
+                writeNumber(array[i]);
+            }
+            writeEndArray();
+        }
+
+        @Override
+        public void writeArray(double[] array, int offset, int length) throws IOException {
+            writeStartArray(array, length);
+            for (int i = offset; i < offset + length; i++) {
+                writeNumber(array[i]);
+            }
+            writeEndArray();
+        }
+
+        @Override
         public void writeString(String text) throws IOException {
             _toonGenerator.writeString(text);
+        }
+
+        @Override
+        public void writeString(SerializableString text) throws IOException {
+            _toonGenerator.writeString(text.getValue());
         }
 
         @Override
@@ -355,6 +568,43 @@ public class ToonFactory extends JsonFactory {
         @Override
         public void writeNumber(double v) throws IOException {
             _toonGenerator.writeNumber(v);
+        }
+
+        @Override
+        public void writeNumber(float v) throws IOException {
+            _toonGenerator.writeNumber((double) v);
+        }
+
+        @Override
+        public void writeNumber(String encodedValue) throws IOException {
+            // Parse the string and write as appropriate number type
+            try {
+                if (encodedValue.contains(".") || encodedValue.contains("e") || encodedValue.contains("E")) {
+                    _toonGenerator.writeNumber(Double.parseDouble(encodedValue));
+                } else {
+                    _toonGenerator.writeNumber(Long.parseLong(encodedValue));
+                }
+            } catch (NumberFormatException e) {
+                throw new IOException("Invalid number format: " + encodedValue, e);
+            }
+        }
+
+        @Override
+        public void writeNumber(BigDecimal v) throws IOException {
+            if (v == null) {
+                writeNull();
+            } else {
+                _toonGenerator.writeNumber(v.doubleValue());
+            }
+        }
+
+        @Override
+        public void writeNumber(java.math.BigInteger v) throws IOException {
+            if (v == null) {
+                writeNull();
+            } else {
+                _toonGenerator.writeNumber(v.longValue());
+            }
         }
 
         @Override
@@ -388,8 +638,150 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
-        public void setCodec(ObjectCodec oc) {
+        public JsonGenerator setCodec(ObjectCodec oc) {
             // Not implemented
+            return this;
+        }
+
+        @Override
+        public void writeTree(TreeNode tree) throws IOException {
+            // For now, throw an exception - full implementation would require codec
+            throw new UnsupportedOperationException("writeTree not yet implemented for TOON format");
+        }
+
+        @Override
+        public void writeObject(Object pojo) throws IOException {
+            // Requires codec to serialize POJOs
+            if (getCodec() == null) {
+                throw new IllegalStateException("No ObjectCodec defined for the generator, cannot serialize Object");
+            }
+            getCodec().writeValue(this, pojo);
+        }
+
+        @Override
+        public JsonStreamContext getOutputContext() {
+            return null; // Simplified - full implementation would track context
+        }
+
+        @Override
+        public Version version() {
+            return com.fasterxml.jackson.core.util.VersionUtil.versionFor(getClass());
+        }
+
+        @Override
+        public JsonGenerator useDefaultPrettyPrinter() {
+            // TOON has its own formatting - pretty printing not applicable
+            return this;
+        }
+
+        @Override
+        public void writeString(char[] text, int offset, int len) throws IOException {
+            writeString(new String(text, offset, len));
+        }
+
+        @Override
+        public void writeRawUTF8String(byte[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRawUTF8String not supported");
+        }
+
+        @Override
+        public void writeUTF8String(byte[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeUTF8String not supported");
+        }
+
+        @Override
+        public void writeRaw(String text) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeRaw(String text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeRaw(char[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeRaw(char c) throws IOException {
+            throw new UnsupportedOperationException("writeRaw not supported in TOON format");
+        }
+
+        @Override
+        public void writeRawValue(String text) throws IOException {
+            throw new UnsupportedOperationException("writeRawValue not supported in TOON format");
+        }
+
+        @Override
+        public void writeRawValue(String text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRawValue not supported in TOON format");
+        }
+
+        @Override
+        public void writeRawValue(char[] text, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("writeRawValue not supported in TOON format");
+        }
+
+        @Override
+        public void writeBinary(Base64Variant variant, byte[] data, int offset, int len) throws IOException {
+            throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
+
+        @Override
+        public int writeBinary(Base64Variant variant, InputStream data, int dataLength) throws IOException {
+            throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
+
+        @Override
+        public void writeOmittedField(String fieldName) throws IOException {
+            // Do nothing - field is omitted
+        }
+
+        @Override
+        public boolean canUseSchema(FormatSchema schema) {
+            return false;
+        }
+
+        @Override
+        public boolean canWriteTypeId() {
+            return false;
+        }
+
+        @Override
+        public boolean canWriteObjectId() {
+            return false;
+        }
+
+        @Override
+        public boolean canWriteBinaryNatively() {
+            return false;
+        }
+
+        @Override
+        public boolean canOmitFields() {
+            return true;
+        }
+
+        @Override
+        public void writeTypeId(Object id) throws IOException {
+            // Not supported
+        }
+
+        @Override
+        public void writeObjectId(Object id) throws IOException {
+            // Not supported
+        }
+
+        @Override
+        public void writeObjectRef(Object id) throws IOException {
+            // Not supported
+        }
+
+        @Override
+        public void writePOJO(Object pojo) throws IOException {
+            writeObject(pojo);
         }
     }
 }
