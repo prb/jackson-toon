@@ -281,6 +281,13 @@ public class ToonFactory extends JsonFactory {
             }
             return defaultValue;
         }
+
+        @Override
+        public byte[] getBinaryValue(Base64Variant variant) throws IOException {
+            // TOON format doesn't natively support binary data
+            // Could be implemented by base64 decoding string values
+            throw new UnsupportedOperationException("Binary values not supported in TOON format");
+        }
     }
 
     /**
@@ -405,6 +412,15 @@ public class ToonFactory extends JsonFactory {
         public void writeTree(TreeNode tree) throws IOException {
             // For now, throw an exception - full implementation would require codec
             throw new UnsupportedOperationException("writeTree not yet implemented for TOON format");
+        }
+
+        @Override
+        public void writeObject(Object pojo) throws IOException {
+            // Requires codec to serialize POJOs
+            if (getCodec() == null) {
+                throw new IllegalStateException("No ObjectCodec defined for the generator, cannot serialize Object");
+            }
+            getCodec().writeValue(this, pojo);
         }
     }
 }
