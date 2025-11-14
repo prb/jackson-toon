@@ -256,6 +256,12 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public float getFloatValue() throws IOException {
+            Number n = getNumberValue();
+            return n != null ? n.floatValue() : 0.0f;
+        }
+
+        @Override
         public BigDecimal getDecimalValue() throws IOException {
             Number n = getNumberValue();
             if (n == null) {
@@ -399,6 +405,15 @@ public class ToonFactory extends JsonFactory {
                 }
             } catch (NumberFormatException e) {
                 throw new IOException("Invalid number format: " + encodedValue, e);
+            }
+        }
+
+        @Override
+        public void writeNumber(BigDecimal v) throws IOException {
+            if (v == null) {
+                writeNull();
+            } else {
+                _toonGenerator.writeNumber(v.doubleValue());
             }
         }
 
