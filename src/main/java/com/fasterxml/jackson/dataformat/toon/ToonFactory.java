@@ -277,6 +277,21 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public java.math.BigInteger getBigIntegerValue() throws IOException {
+            Number n = getNumberValue();
+            if (n == null) {
+                return null;
+            }
+            if (n instanceof java.math.BigInteger) {
+                return (java.math.BigInteger) n;
+            }
+            if (n instanceof java.math.BigDecimal) {
+                return ((java.math.BigDecimal) n).toBigInteger();
+            }
+            return java.math.BigInteger.valueOf(n.longValue());
+        }
+
+        @Override
         public void close() throws IOException {
             _toonParser.close();
         }
@@ -392,6 +407,11 @@ public class ToonFactory extends JsonFactory {
         @Override
         public void writeNumber(double v) throws IOException {
             _toonGenerator.writeNumber(v);
+        }
+
+        @Override
+        public void writeNumber(float v) throws IOException {
+            _toonGenerator.writeNumber((double) v);
         }
 
         @Override
