@@ -3,6 +3,7 @@ package com.fasterxml.jackson.dataformat.toon;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.io.IOContext;
 import java.io.*;
+import java.math.BigDecimal;
 
 /**
  * Factory for creating TOON format parsers and generators.
@@ -255,6 +256,21 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
+        public BigDecimal getDecimalValue() throws IOException {
+            Number n = getNumberValue();
+            if (n == null) {
+                return null;
+            }
+            if (n instanceof BigDecimal) {
+                return (BigDecimal) n;
+            }
+            if (n instanceof Double || n instanceof Float) {
+                return BigDecimal.valueOf(n.doubleValue());
+            }
+            return BigDecimal.valueOf(n.longValue());
+        }
+
+        @Override
         public void close() throws IOException {
             _toonParser.close();
         }
@@ -370,6 +386,20 @@ public class ToonFactory extends JsonFactory {
         @Override
         public void writeNumber(double v) throws IOException {
             _toonGenerator.writeNumber(v);
+        }
+
+        @Override
+        public void writeNumber(String encodedValue) throws IOException {
+            // Parse the string and write as appropriate number type
+            try {
+                if (encodedValue.contains(".") || encodedValue.contains("e") || encodedValue.contains("E")) {
+                    _toonGenerator.writeNumber(Double.parseDouble(encodedValue));
+                } else {
+                    _toonGenerator.writeNumber(Long.parseLong(encodedValue));
+                }
+            } catch (NumberFormatException e) {
+                throw new IOException("Invalid number format: " + encodedValue, e);
+            }
         }
 
         @Override
