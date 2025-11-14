@@ -231,14 +231,26 @@ public class ToonParser {
     // ========================================================================
 
     private Event parseObjectContent() throws IOException {
-        skipWhitespace();
+        // Only skip whitespace when looking for a field, not when parsing a value
+        // (parseFieldValue needs to see NEWLINE/INDENT to detect nested structures)
+        if (_state == State.NEED_FIELD || _state == State.NEED_CONTENT) {
+            // Skip whitespace, but DEDENT signals end of object
+            while (_currentToken == ToonToken.NEWLINE
+                || _currentToken == ToonToken.INDENT
+                || _currentToken == ToonToken.SAME_INDENT) {
+                advance();
+            }
+        }
 
         // Check for end of object (dedent or EOF)
-        if (_currentToken == ToonToken.EOF
-            || _lexer.getIndentLevel() < _context.getExpectedIndentLevel()) {
+        if (_currentToken == ToonToken.EOF || _currentToken == ToonToken.DEDENT) {
             _currentEvent = Event.END_OBJECT;
             _context = _context.getParent();
             _state = State.NEED_CONTENT;
+            // Consume the DEDENT token if present
+            if (_currentToken == ToonToken.DEDENT) {
+                advance();
+            }
             return _currentEvent;
         }
 
@@ -347,32 +359,41 @@ public class ToonParser {
         }
 
         expect(ToonToken.COLON);
-        expect(ToonToken.NEWLINE);
 
-        // Determine array format and parse content
-        if (fields != null) {
-            // Tabular array
-            _currentEvent = Event.START_ARRAY;
-            _context = _context.createChildTabularArray(length, fields, delimiter);
-            return _currentEvent;
-        } else if (_currentToken == ToonToken.INDENT) {
-            advance(); // Consume indent
+        // Check if values are on same line (inline array) or next line (multi-line array)
+        if (_currentToken == ToonToken.NEWLINE) {
+            advance(); // Consume newline
 
-            if (_currentToken == ToonToken.HYPHEN) {
-                // List array
+            // Determine array format based on what follows
+            if (fields != null) {
+                // Tabular array
                 _currentEvent = Event.START_ARRAY;
-                _context = _context.createChildListArray(length);
+                _context = _context.createChildTabularArray(length, fields, delimiter);
                 return _currentEvent;
+            } else if (_currentToken == ToonToken.INDENT) {
+                advance(); // Consume indent
+
+                if (_currentToken == ToonToken.HYPHEN) {
+                    // List array
+                    _currentEvent = Event.START_ARRAY;
+                    _context = _context.createChildListArray(length);
+                    return _currentEvent;
+                } else {
+                    // Multi-line inline array
+                    _currentEvent = Event.START_ARRAY;
+                    _context = _context.createChildInlineArray(length, delimiter);
+                    return _currentEvent;
+                }
             } else {
-                // Inline array
+                // Empty array or error
                 _currentEvent = Event.START_ARRAY;
                 _context = _context.createChildInlineArray(length, delimiter);
                 return _currentEvent;
             }
         } else {
-            // Empty array
+            // Inline array on same line
             _currentEvent = Event.START_ARRAY;
-            _context = _context.createChildInlineArray(0, delimiter);
+            _context = _context.createChildInlineArray(length, delimiter);
             return _currentEvent;
         }
     }
@@ -421,8 +442,15 @@ public class ToonParser {
                 ));
             }
 
-            expect(ToonToken.NEWLINE);
-            expect(ToonToken.DEDENT);
+            // For multi-line arrays, consume NEWLINE and DEDENT
+            // For same-line arrays (like [3]: a,b,c), just end
+            if (_currentToken == ToonToken.NEWLINE) {
+                advance();
+                if (_currentToken == ToonToken.DEDENT) {
+                    advance();
+                }
+            }
+
             _context = _context.getParent();
             _state = State.NEED_CONTENT;
             return _currentEvent;
@@ -470,7 +498,15 @@ public class ToonParser {
         }
 
         // Start new row (object)
-        expect(ToonToken.INDENT);
+        // First row has INDENT, subsequent rows have SAME_INDENT
+        if (_currentToken == ToonToken.INDENT || _currentToken == ToonToken.SAME_INDENT) {
+            advance();
+        } else {
+            throw new IOException(String.format(
+                "Expected INDENT or SAME_INDENT but got %s at line %d, column %d",
+                _currentToken, _lexer.getLine(), _lexer.getColumn()
+            ));
+        }
         _currentEvent = Event.START_OBJECT;
         _context = _context.createTabularRow();
         _state = State.NEED_FIELD; // Start emitting field names
@@ -481,7 +517,17 @@ public class ToonParser {
         if (_context.getCurrentFieldIndex() >= _context.getFieldNames().length) {
             // End of row
             _currentEvent = Event.END_OBJECT;
-            expect(ToonToken.NEWLINE);
+
+            // After last field, expect NEWLINE (more rows) or DEDENT (end of array)
+            if (_currentToken == ToonToken.NEWLINE) {
+                advance();
+            } else if (_currentToken != ToonToken.DEDENT) {
+                throw new IOException(String.format(
+                    "Expected NEWLINE or DEDENT but got %s at line %d, column %d",
+                    _currentToken, _lexer.getLine(), _lexer.getColumn()
+                ));
+            }
+
             _context = _context.getParent();
             _context.incrementIndex();
             _state = State.NEED_CONTENT;
@@ -543,6 +589,10 @@ public class ToonParser {
         }
 
         // Parse list item
+        // First item has INDENT, subsequent items have SAME_INDENT
+        if (_currentToken == ToonToken.INDENT || _currentToken == ToonToken.SAME_INDENT) {
+            advance();
+        }
         expect(ToonToken.HYPHEN);
 
         if (_currentToken == ToonToken.LBRACKET) {
@@ -562,7 +612,17 @@ public class ToonParser {
             // Primitive item
             _context.incrementIndex();
             Event event = parsePrimitiveValue();
-            expect(ToonToken.NEWLINE);
+
+            // After item, expect NEWLINE (more items) or DEDENT (end of list)
+            if (_currentToken == ToonToken.NEWLINE) {
+                advance();
+            } else if (_currentToken != ToonToken.DEDENT) {
+                throw new IOException(String.format(
+                    "Expected NEWLINE or DEDENT but got %s at line %d, column %d",
+                    _currentToken, _lexer.getLine(), _lexer.getColumn()
+                ));
+            }
+
             return event;
         }
     }
