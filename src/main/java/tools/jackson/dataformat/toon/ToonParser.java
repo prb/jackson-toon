@@ -588,6 +588,11 @@ public class ToonParser {
             return _currentEvent;
         }
 
+        // Skip blank lines (consecutive NEWLINE tokens)
+        while (_currentToken == ToonToken.NEWLINE) {
+            advance();
+        }
+
         // Parse list item
         // First item has INDENT, subsequent items have SAME_INDENT
         if (_currentToken == ToonToken.INDENT || _currentToken == ToonToken.SAME_INDENT) {
