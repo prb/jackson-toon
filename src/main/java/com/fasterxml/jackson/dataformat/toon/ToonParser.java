@@ -1,4 +1,4 @@
-package tools.jackson.dataformat.toon;
+package com.fasterxml.jackson.dataformat.toon;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -155,6 +155,14 @@ public class ToonParser {
      */
     public Number getNumberValue() {
         return _numberValue;
+    }
+
+    /**
+     * Closes the parser and releases resources.
+     */
+    public void close() throws IOException {
+        // Close the underlying lexer/reader if needed
+        // For now, this is a no-op since Reader management is external
     }
 
     // ========================================================================

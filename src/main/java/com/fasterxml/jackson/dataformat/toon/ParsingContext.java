@@ -1,4 +1,4 @@
-package tools.jackson.dataformat.toon;
+package com.fasterxml.jackson.dataformat.toon;
 
 /**
  * Represents the current parsing context (state) in the TOON parser.

@@ -1,4 +1,4 @@
-package tools.jackson.dataformat.toon;
+package com.fasterxml.jackson.dataformat.toon;
 
 /**
  * Enumeration of all token types in the TOON format.

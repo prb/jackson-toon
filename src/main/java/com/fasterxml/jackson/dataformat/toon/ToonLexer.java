@@ -1,4 +1,4 @@
-package tools.jackson.dataformat.toon;
+package com.fasterxml.jackson.dataformat.toon;
 
 import java.io.IOException;
 import java.io.Reader;

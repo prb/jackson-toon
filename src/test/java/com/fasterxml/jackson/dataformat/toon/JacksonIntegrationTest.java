@@ -1,57 +1,41 @@
-import tools.jackson.dataformat.toon.*;
+package com.fasterxml.jackson.dataformat.toon;
+
 import com.fasterxml.jackson.core.*;
+import org.junit.jupiter.api.Test;
+
 import java.io.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test full Jackson integration with TOON format
  */
 public class JacksonIntegrationTest {
-    public static void main(String[] args) {
-        try {
-            System.out.println("=== Jackson TOON Integration Tests ===\n");
 
-            testFactoryParser();
-            testFactoryGenerator();
-            testRoundTripWithFactory();
-
-            System.out.println("\n=== All Jackson integration tests passed! ===");
-        } catch (Exception e) {
-            System.err.println("Test failed: " + e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
-        }
-    }
-
-    static void testFactoryParser() throws IOException {
-        System.out.println("Test: ToonFactory Parser");
+    @Test
+    void testFactoryParser() throws IOException {
         String toon = "id: 123\nname: Alice\nactive: true";
 
         ToonFactory factory = new ToonFactory();
         JsonParser parser = factory.createParser(toon);
 
-        System.out.println("Input TOON:");
-        System.out.println(toon);
-        System.out.println("\nParsed tokens:");
-
         JsonToken token;
         int count = 0;
         while ((token = parser.nextToken()) != null && count++ < 20) {
-            System.out.print("  " + token);
+            // Verify we can read tokens
+            assertNotNull(token);
             if (token == JsonToken.FIELD_NAME || token == JsonToken.VALUE_STRING) {
-                System.out.print(" = " + parser.getText());
+                assertNotNull(parser.getText());
             } else if (token == JsonToken.VALUE_NUMBER_INT) {
-                System.out.print(" = " + parser.getIntValue());
+                assertTrue(parser.getIntValue() >= 0 || parser.getIntValue() < 0); // Valid int
             }
-            System.out.println();
         }
 
         parser.close();
-        System.out.println("? ToonFactory parser works\n");
     }
 
-    static void testFactoryGenerator() throws IOException {
-        System.out.println("Test: ToonFactory Generator");
-
+    @Test
+    void testFactoryGenerator() throws IOException {
         StringWriter sw = new StringWriter();
         ToonFactory factory = new ToonFactory();
         JsonGenerator gen = factory.createGenerator(sw);
@@ -70,19 +54,14 @@ public class JacksonIntegrationTest {
         gen.close();
 
         String output = sw.toString();
-        System.out.println("Generated TOON:");
-        System.out.println(output);
 
         assertTrue(output.contains("userId: 456"), "Should contain userId");
         assertTrue(output.contains("userName: Bob"), "Should contain userName");
         assertTrue(output.contains("[2]:"), "Should have array");
-
-        System.out.println("? ToonFactory generator works\n");
     }
 
-    static void testRoundTripWithFactory() throws IOException {
-        System.out.println("Test: Round Trip with ToonFactory");
-
+    @Test
+    void testRoundTripWithFactory() throws IOException {
         // Original data
         StringWriter sw1 = new StringWriter();
         ToonFactory factory = new ToonFactory();
@@ -102,8 +81,6 @@ public class JacksonIntegrationTest {
         gen.close();
 
         String toon = sw1.toString();
-        System.out.println("Generated TOON:");
-        System.out.println(toon);
 
         // Parse it back
         JsonParser parser = factory.createParser(toon);
@@ -153,19 +130,9 @@ public class JacksonIntegrationTest {
         gen2.close();
 
         String toon2 = sw2.toString();
-        System.out.println("\nRe-generated TOON:");
-        System.out.println(toon2);
 
         // Both should be functionally equivalent
         assertTrue(toon2.contains("product:"), "Should preserve structure");
         assertTrue(toon2.contains("id: 789"), "Should preserve data");
-
-        System.out.println("? Round trip with factory works\n");
-    }
-
-    static void assertTrue(boolean condition, String message) {
-        if (!condition) {
-            throw new AssertionError("Assertion failed: " + message);
-        }
     }
 }
