@@ -273,6 +273,14 @@ public class ToonFactory extends JsonFactory {
         public void setCodec(ObjectCodec c) {
             // Not implemented
         }
+
+        @Override
+        public String getValueAsString(String defaultValue) throws IOException {
+            if (_currentToken == JsonToken.VALUE_STRING) {
+                return getText();
+            }
+            return defaultValue;
+        }
     }
 
     /**
@@ -388,8 +396,15 @@ public class ToonFactory extends JsonFactory {
         }
 
         @Override
-        public void setCodec(ObjectCodec oc) {
+        public JsonGenerator setCodec(ObjectCodec oc) {
             // Not implemented
+            return this;
+        }
+
+        @Override
+        public void writeTree(TreeNode tree) throws IOException {
+            // For now, throw an exception - full implementation would require codec
+            throw new UnsupportedOperationException("writeTree not yet implemented for TOON format");
         }
     }
 }
