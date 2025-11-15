@@ -277,6 +277,12 @@ public class ToonParser {
     private Event parseFieldName() throws IOException {
         // Parse key
         if (!_currentToken.isValue()) {
+            // DEBUG: Print what token we actually have
+            System.err.println("DEBUG parseFieldName: currentToken=" + _currentToken +
+                             ", peekToken=" + _peekToken +
+                             ", line=" + _lexer.getLine() +
+                             ", state=" + _state +
+                             ", context=" + _context.getType());
             throw new IOException("Expected field name at line " + _lexer.getLine());
         }
 
