@@ -41,10 +41,16 @@ public class GeneratorContext {
     // For objects
     private String _pendingFieldName;
     private int _fieldCount;
+    private Map<String, Object> _bufferedObject;  // For objects being buffered in arrays
 
     // For arrays
     private List<Object> _bufferedElements;
     private int _elementCount;
+
+    // For streaming arrays (size hint provided)
+    private int _declaredSize = -1;  // -1 means unknown
+    private boolean _streamingMode = false;
+    private boolean _headerWritten = false;
 
     // For tabular arrays
     private String[] _fieldNames;
@@ -80,8 +86,23 @@ public class GeneratorContext {
      * Creates a child inline array context.
      */
     public GeneratorContext createChildInlineArray(char delimiter) {
+        return createChildInlineArray(delimiter, -1);
+    }
+
+    /**
+     * Creates a child inline array context with size hint.
+     */
+    public GeneratorContext createChildInlineArray(char delimiter, int sizeHint) {
         GeneratorContext ctx = new GeneratorContext(Type.ARRAY_INLINE, this, _indentLevel, delimiter);
-        ctx._bufferedElements = new ArrayList<>();
+        if (sizeHint >= 0) {
+            // Size is known - enable streaming mode
+            ctx._declaredSize = sizeHint;
+            ctx._streamingMode = true;
+            // Don't create buffer in streaming mode
+        } else {
+            // Size unknown - use buffering
+            ctx._bufferedElements = new ArrayList<>();
+        }
         return ctx;
     }
 
@@ -166,6 +187,30 @@ public class GeneratorContext {
 
     public String[] getFieldNames() {
         return _fieldNames;
+    }
+
+    public Map<String, Object> getBufferedObject() {
+        return _bufferedObject;
+    }
+
+    public void setBufferedObject(Map<String, Object> bufferedObject) {
+        this._bufferedObject = bufferedObject;
+    }
+
+    public int getDeclaredSize() {
+        return _declaredSize;
+    }
+
+    public boolean isStreamingMode() {
+        return _streamingMode;
+    }
+
+    public boolean isHeaderWritten() {
+        return _headerWritten;
+    }
+
+    public void setHeaderWritten(boolean written) {
+        this._headerWritten = written;
     }
 
     public boolean isInArray() {

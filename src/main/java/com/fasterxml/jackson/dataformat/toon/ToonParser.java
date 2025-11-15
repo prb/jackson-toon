@@ -285,8 +285,18 @@ public class ToonParser {
         _context.setCurrentKey(_textValue);
         advance();
 
-        // Expect colon
-        expect(ToonToken.COLON);
+        // Check if this is an array field (fieldname[N]:) or simple field (fieldname:)
+        // For array fields, we DON'T consume the [N] here - let parseFieldValue() handle it
+        // We just skip expecting COLON for now since it comes after the array declaration
+        if (_currentToken != ToonToken.COLON && _currentToken != ToonToken.LBRACKET) {
+            throw new IOException("Expected ':' or '[' after field name at line " + _lexer.getLine());
+        }
+
+        // If it's a simple field (has COLON), consume it
+        // If it's an array field (has LBRACKET), leave it for parseFieldValue() to handle
+        if (_currentToken == ToonToken.COLON) {
+            advance(); // consume colon
+        }
 
         // Transition to NEED_VALUE state
         _state = State.NEED_VALUE;

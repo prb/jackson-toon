@@ -1,7 +1,6 @@
 package com.fasterxml.jackson.dataformat.toon;
 
 import org.junit.jupiter.api.*;
-import tools.jackson.dataformat.toon.ToonParser;
 
 import java.io.IOException;
 import java.io.StringReader;

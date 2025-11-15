@@ -470,7 +470,7 @@ public class ToonFactory extends JsonFactory {
 
         @Override
         public void writeStartArray(int size) throws IOException {
-            _toonGenerator.writeStartArray();
+            _toonGenerator.writeStartArray(size);
         }
 
         @Override
@@ -480,7 +480,7 @@ public class ToonFactory extends JsonFactory {
 
         @Override
         public void writeStartArray(Object forValue, int size) throws IOException {
-            _toonGenerator.writeStartArray();
+            _toonGenerator.writeStartArray(size);
         }
 
         @Override
