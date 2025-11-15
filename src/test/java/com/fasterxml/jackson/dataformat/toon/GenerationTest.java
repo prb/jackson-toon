@@ -403,11 +403,6 @@ public class GenerationTest {
             String toon = sw.toString();
             assertNotNull(toon, "Generated TOON should not be null");
 
-            // Debug: print generated TOON
-            System.out.println("Generated TOON for testNestedStructureRoundTrip:");
-            System.out.println(toon);
-            System.out.println("---");
-
             // Parse it back
             ToonParser parser = new ToonParser(new StringReader(toon));
 
@@ -470,11 +465,6 @@ public class GenerationTest {
 
             String toon = sw.toString();
             assertNotNull(toon, "Generated TOON should not be null");
-
-            // Debug: print generated TOON
-            System.out.println("Generated TOON for testComplexArrayRoundTrip:");
-            System.out.println(toon);
-            System.out.println("---");
 
             // Parse it back
             ToonParser parser = new ToonParser(new StringReader(toon));
