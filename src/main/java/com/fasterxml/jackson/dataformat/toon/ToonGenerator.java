@@ -58,6 +58,8 @@ public class ToonGenerator implements Closeable {
             Map<String, Object> obj = new LinkedHashMap<>();
             _context.addBufferedElement(obj);
             _context = _context.createChildObject(_context.getIndentLevel() + 1);
+            // Set the buffered object reference so writeValue() knows to add to this Map
+            _context.setBufferedObject(obj);
         } else if (_context.getType() == GeneratorContext.Type.OBJECT) {
             // Nested object - write field name if pending
             String fieldName = _context.getPendingFieldName();
@@ -217,26 +219,36 @@ public class ToonGenerator implements Closeable {
                 throw new IOException("No field name set for value");
             }
 
-            writeIndent();
-            _writer.write(fieldName);
-            _writer.write(": ");
-
-            // Check if value is start of nested structure
-            if (value == null) {
-                _writer.write("null");
-            } else if (value instanceof String) {
-                writeStringValue((String) value);
-            } else if (value instanceof Number) {
-                _writer.write(value.toString());
-            } else if (value instanceof Boolean) {
-                _writer.write(value.toString());
+            // Check if this object is being buffered in an array
+            Map<String, Object> bufferedObject = _context.getBufferedObject();
+            if (bufferedObject != null) {
+                // Add to buffered object Map instead of writing
+                bufferedObject.put(fieldName, value);
+                _context.setPendingFieldName(null);
+                _context.incrementFieldCount();
             } else {
-                _writer.write(value.toString());
-            }
+                // Write directly to output
+                writeIndent();
+                _writer.write(fieldName);
+                _writer.write(": ");
 
-            _writer.write("\n");
-            _context.setPendingFieldName(null);
-            _context.incrementFieldCount();
+                // Check if value is start of nested structure
+                if (value == null) {
+                    _writer.write("null");
+                } else if (value instanceof String) {
+                    writeStringValue((String) value);
+                } else if (value instanceof Number) {
+                    _writer.write(value.toString());
+                } else if (value instanceof Boolean) {
+                    _writer.write(value.toString());
+                } else {
+                    _writer.write(value.toString());
+                }
+
+                _writer.write("\n");
+                _context.setPendingFieldName(null);
+                _context.incrementFieldCount();
+            }
 
         } else if (_context.isInArray()) {
             // Buffer value for later

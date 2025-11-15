@@ -41,6 +41,7 @@ public class GeneratorContext {
     // For objects
     private String _pendingFieldName;
     private int _fieldCount;
+    private Map<String, Object> _bufferedObject;  // For objects being buffered in arrays
 
     // For arrays
     private List<Object> _bufferedElements;
@@ -166,6 +167,14 @@ public class GeneratorContext {
 
     public String[] getFieldNames() {
         return _fieldNames;
+    }
+
+    public Map<String, Object> getBufferedObject() {
+        return _bufferedObject;
+    }
+
+    public void setBufferedObject(Map<String, Object> bufferedObject) {
+        this._bufferedObject = bufferedObject;
     }
 
     public boolean isInArray() {
