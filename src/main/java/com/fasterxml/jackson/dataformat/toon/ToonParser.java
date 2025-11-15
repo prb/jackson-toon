@@ -285,6 +285,31 @@ public class ToonParser {
         _context.setCurrentKey(_textValue);
         advance();
 
+        // Check for array declaration [N] or [N]{delimiter} or [N]{field1,field2,...}
+        if (_currentToken == ToonToken.LBRACKET) {
+            // Skip the array declaration tokens until we get to COLON
+            // This handles: fieldname[N]:, fieldname[N]{|]:, fieldname[N]{id,name}:
+            advance(); // skip [
+
+            // Skip array size (NUMBER token)
+            if (_currentToken == ToonToken.NUMBER) {
+                advance();
+            }
+
+            // Expect ]
+            expect(ToonToken.RBRACKET);
+
+            // Check for optional delimiter or field spec {
+            if (_currentToken == ToonToken.LBRACE) {
+                advance(); // skip {
+                // Skip contents until }
+                while (_currentToken != ToonToken.RBRACE && _currentToken != ToonToken.EOF) {
+                    advance();
+                }
+                expect(ToonToken.RBRACE);
+            }
+        }
+
         // Expect colon
         expect(ToonToken.COLON);
 
