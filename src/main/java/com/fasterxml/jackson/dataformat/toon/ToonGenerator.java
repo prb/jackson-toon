@@ -153,9 +153,22 @@ public class ToonGenerator implements Closeable {
      * Array elements are buffered until writeEndArray() to determine format.
      */
     public void writeStartArray() throws IOException {
+        // Capture pending field name from parent context before creating child
+        String pendingFieldName = _context.getPendingFieldName();
+
         // Start buffering array elements
         // We'll decide format (inline vs list) when array ends
         _context = _context.createChildInlineArray(',');
+
+        // Store the field name in the array context for later use
+        if (pendingFieldName != null) {
+            _context.setPendingFieldName(pendingFieldName);
+            // Clear it from parent (will be handled when array is written)
+            if (_context.getParent() != null) {
+                _context.getParent().setPendingFieldName(null);
+                _context.getParent().incrementFieldCount();
+            }
+        }
     }
 
     /**
@@ -170,6 +183,7 @@ public class ToonGenerator implements Closeable {
         List<Object> elements = _context.getBufferedElements();
         int indentLevel = _context.getIndentLevel();
         char delimiter = _context.getDelimiter();
+        String fieldName = _context.getPendingFieldName();
 
         // Pop context before writing
         GeneratorContext arrayContext = _context;
@@ -181,10 +195,10 @@ public class ToonGenerator implements Closeable {
 
         if (allPrimitives && elements.size() <= 10) {
             // Write as inline array
-            writeInlineArray(elements, delimiter, indentLevel);
+            writeInlineArray(fieldName, elements, delimiter, indentLevel);
         } else {
             // Write as list array
-            writeListArray(elements, indentLevel);
+            writeListArray(fieldName, elements, indentLevel);
         }
     }
 
@@ -243,10 +257,16 @@ public class ToonGenerator implements Closeable {
     }
 
     /**
-     * Writes an inline array: [N]: v1,v2,v3
+     * Writes an inline array: fieldname[N]: v1,v2,v3 or [N]: v1,v2,v3
      */
-    private void writeInlineArray(List<Object> elements, char delimiter, int indentLevel) throws IOException {
+    private void writeInlineArray(String fieldName, List<Object> elements, char delimiter, int indentLevel) throws IOException {
         writeIndent();
+
+        // Write field name if present
+        if (fieldName != null) {
+            _writer.write(fieldName);
+        }
+
         _writer.write("[" + elements.size() + "]");
 
         // Write delimiter if not comma
@@ -279,10 +299,16 @@ public class ToonGenerator implements Closeable {
     }
 
     /**
-     * Writes a list array: [N]: - item1 | - item2
+     * Writes a list array: fieldname[N]: - item1 | - item2 or [N]: - item1 | - item2
      */
-    private void writeListArray(List<Object> elements, int indentLevel) throws IOException {
+    private void writeListArray(String fieldName, List<Object> elements, int indentLevel) throws IOException {
         writeIndent();
+
+        // Write field name if present
+        if (fieldName != null) {
+            _writer.write(fieldName);
+        }
+
         _writer.write("[" + elements.size() + "]:\n");
 
         // Write each element with - prefix
