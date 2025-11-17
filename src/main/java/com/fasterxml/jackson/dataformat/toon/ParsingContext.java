@@ -1,5 +1,10 @@
 package com.fasterxml.jackson.dataformat.toon;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.core.exc.StreamConstraintsException;
+
+import java.io.IOException;
+
 /**
  * Represents the current parsing context (state) in the TOON parser.
  * <p>
@@ -40,6 +45,8 @@ public class ParsingContext {
     private final Type _type;
     private final ParsingContext _parent;
     private final int _expectedIndentLevel;
+    private final int _nestingDepth;
+    private final StreamReadConstraints _streamReadConstraints;
 
     // For arrays
     private final int _declaredLength;
@@ -56,20 +63,30 @@ public class ParsingContext {
     private final char _delimiter;
 
     /**
-     * Creates a root context.
+     * Creates a root context with default constraints.
      */
     public ParsingContext() {
-        this(Type.ROOT, null, 0, 0, null, ',');
+        this(StreamReadConstraints.defaults());
+    }
+
+    /**
+     * Creates a root context with specified constraints.
+     */
+    public ParsingContext(StreamReadConstraints constraints) {
+        this(Type.ROOT, null, 0, 0, constraints, 0, null, ',');
     }
 
     /**
      * Creates a context of the given type.
      */
     private ParsingContext(Type type, ParsingContext parent, int expectedIndent,
+                          int nestingDepth, StreamReadConstraints constraints,
                           int declaredLength, String[] fieldNames, char delimiter) {
         this._type = type;
         this._parent = parent;
         this._expectedIndentLevel = expectedIndent;
+        this._nestingDepth = nestingDepth;
+        this._streamReadConstraints = constraints;
         this._declaredLength = declaredLength;
         this._fieldNames = fieldNames;
         this._delimiter = delimiter;
@@ -80,56 +97,84 @@ public class ParsingContext {
     /**
      * Creates a child object context.
      */
-    public ParsingContext createChildObject(int indentLevel) {
-        return new ParsingContext(Type.OBJECT, this, indentLevel, 0, null, _delimiter);
+    public ParsingContext createChildObject(int indentLevel) throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
+        return new ParsingContext(Type.OBJECT, this, indentLevel, childDepth,
+                                 _streamReadConstraints, 0, null, _delimiter);
     }
 
     /**
      * Creates a child inline array context.
      */
-    public ParsingContext createChildInlineArray(int length, char delimiter) {
+    public ParsingContext createChildInlineArray(int length, char delimiter) throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
         return new ParsingContext(Type.ARRAY_INLINE, this, _expectedIndentLevel,
-                                 length, null, delimiter);
+                                 childDepth, _streamReadConstraints, length, null, delimiter);
     }
 
     /**
      * Creates a child tabular array context.
      */
-    public ParsingContext createChildTabularArray(int length, String[] fields, char delimiter) {
+    public ParsingContext createChildTabularArray(int length, String[] fields, char delimiter) throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
         return new ParsingContext(Type.ARRAY_TABULAR, this, _expectedIndentLevel,
-                                 length, fields, delimiter);
+                                 childDepth, _streamReadConstraints, length, fields, delimiter);
     }
 
     /**
      * Creates a child list array context.
      */
-    public ParsingContext createChildListArray(int length) {
+    public ParsingContext createChildListArray(int length) throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
         return new ParsingContext(Type.ARRAY_LIST, this, _expectedIndentLevel,
-                                 length, null, _delimiter);
+                                 childDepth, _streamReadConstraints, length, null, _delimiter);
     }
 
     /**
      * Creates a tabular row context.
      */
-    public ParsingContext createTabularRow() {
+    public ParsingContext createTabularRow() throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
         return new ParsingContext(Type.TABULAR_ROW, this, _expectedIndentLevel,
-                                 _fieldNames.length, _fieldNames, _delimiter);
+                                 childDepth, _streamReadConstraints, _fieldNames.length, _fieldNames, _delimiter);
     }
 
     /**
      * Creates a list item context.
      */
-    public ParsingContext createListItem() {
+    public ParsingContext createListItem() throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
         return new ParsingContext(Type.LIST_ITEM, this, _expectedIndentLevel,
-                                 0, null, _delimiter);
+                                 childDepth, _streamReadConstraints, 0, null, _delimiter);
     }
 
     /**
      * Creates a list item object context.
      */
-    public ParsingContext createListItemObject(int indentLevel) {
+    public ParsingContext createListItemObject(int indentLevel) throws IOException {
+        int childDepth = _nestingDepth + 1;
+        validateNestingDepth(childDepth);
         return new ParsingContext(Type.LIST_ITEM_OBJECT, this, indentLevel,
-                                 0, null, _delimiter);
+                                 childDepth, _streamReadConstraints, 0, null, _delimiter);
+    }
+
+    /**
+     * Validates that the nesting depth does not exceed the maximum allowed.
+     */
+    private void validateNestingDepth(int depth) throws IOException {
+        if (_streamReadConstraints != null) {
+            try {
+                _streamReadConstraints.validateNestingDepth(depth);
+            } catch (StreamConstraintsException e) {
+                throw new IOException(e.getMessage(), e);
+            }
+        }
     }
 
     // Getters
@@ -144,6 +189,10 @@ public class ParsingContext {
 
     public int getExpectedIndentLevel() {
         return _expectedIndentLevel;
+    }
+
+    public int getNestingDepth() {
+        return _nestingDepth;
     }
 
     public int getDeclaredLength() {
