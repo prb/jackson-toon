@@ -1,5 +1,8 @@
 package com.fasterxml.jackson.dataformat.toon;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.core.io.NumberInput;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayDeque;
@@ -61,6 +64,7 @@ public class ToonLexer {
 
     private final int _indentSize;    // Expected indentation size (default 2)
     private final boolean _strictMode; // Enforce strict validation rules
+    private final StreamReadConstraints _streamReadConstraints; // Constraints for parsing
 
     // ========================================================================
     // Constructor
@@ -73,7 +77,7 @@ public class ToonLexer {
      * @throws IOException if reading fails
      */
     public ToonLexer(Reader input) throws IOException {
-        this(input, 2, true);
+        this(input, 2, true, StreamReadConstraints.defaults());
     }
 
     /**
@@ -85,9 +89,23 @@ public class ToonLexer {
      * @throws IOException if reading fails
      */
     public ToonLexer(Reader input, int indentSize, boolean strictMode) throws IOException {
+        this(input, indentSize, strictMode, StreamReadConstraints.defaults());
+    }
+
+    /**
+     * Creates a new TOON lexer with all settings.
+     *
+     * @param input the input reader
+     * @param indentSize expected indentation size (typically 2 or 4)
+     * @param strictMode whether to enforce strict validation
+     * @param constraints stream read constraints for validation
+     * @throws IOException if reading fails
+     */
+    public ToonLexer(Reader input, int indentSize, boolean strictMode, StreamReadConstraints constraints) throws IOException {
         this._input = input;
         this._indentSize = indentSize;
         this._strictMode = strictMode;
+        this._streamReadConstraints = constraints;
 
         this._line = 1;
         this._column = 0;
@@ -566,13 +584,32 @@ public class ToonLexer {
             }
         }
 
-        // Parse the number
+        // Parse the number using Jackson's NumberInput for performance and validation
         String numberStr = _tokenText.toString();
+        int len = numberStr.length();
+
+        // Validate number length against constraints
+        int maxLen = _streamReadConstraints.getMaxNumberLength();
+        if (len > maxLen) {
+            _errorMessage = String.format(
+                "Number length (%d) exceeds maximum allowed (%d) at line %d, column %d",
+                len, maxLen, _tokenStartLine, _tokenStartColumn
+            );
+            return ToonToken.ERROR;
+        }
+
         try {
-            if (numberStr.contains(".") || numberStr.contains("e") || numberStr.contains("E")) {
-                _tokenValue = Double.parseDouble(numberStr);
+            // Use NumberInput for optimized parsing
+            boolean hasDecimalOrExponent = numberStr.indexOf('.') >= 0
+                || numberStr.indexOf('e') >= 0
+                || numberStr.indexOf('E') >= 0;
+
+            if (hasDecimalOrExponent) {
+                // Parse as double using NumberInput
+                _tokenValue = NumberInput.parseDouble(numberStr, false);
             } else {
-                _tokenValue = Long.parseLong(numberStr);
+                // Parse as long using NumberInput (maintain compatibility with previous behavior)
+                _tokenValue = NumberInput.parseLong(numberStr);
             }
         } catch (NumberFormatException e) {
             _errorMessage = String.format(

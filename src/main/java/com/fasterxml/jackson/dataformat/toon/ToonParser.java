@@ -82,7 +82,7 @@ public class ToonParser {
     }
 
     public ToonParser(Reader input, int indentSize, boolean strictMode, StreamReadConstraints constraints) throws IOException {
-        this._lexer = new ToonLexer(input, indentSize, strictMode);
+        this._lexer = new ToonLexer(input, indentSize, strictMode, constraints);
         this._strictMode = strictMode;
         this._contextStack = new ArrayDeque<>();
         this._context = new ParsingContext(constraints); // Root context with constraints
