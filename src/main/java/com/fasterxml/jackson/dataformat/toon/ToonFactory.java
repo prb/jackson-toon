@@ -87,14 +87,16 @@ public class ToonFactory extends JsonFactory {
 
     @Override
     public JsonParser createParser(String content) throws IOException {
-        return new ToonParserAdapter(new ToonParser(new StringReader(content)), _strictMode,
-            StreamReadConstraints.defaults());
+        StreamReadConstraints constraints = StreamReadConstraints.defaults();
+        return new ToonParserAdapter(new ToonParser(new StringReader(content), 2, _strictMode, constraints),
+            _strictMode, constraints);
     }
 
     @Override
     public JsonParser createParser(Reader r) throws IOException {
-        return new ToonParserAdapter(new ToonParser(r), _strictMode,
-            StreamReadConstraints.defaults());
+        StreamReadConstraints constraints = StreamReadConstraints.defaults();
+        return new ToonParserAdapter(new ToonParser(r, 2, _strictMode, constraints),
+            _strictMode, constraints);
     }
 
     @Override

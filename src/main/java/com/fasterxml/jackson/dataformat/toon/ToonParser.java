@@ -1,5 +1,7 @@
 package com.fasterxml.jackson.dataformat.toon;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayDeque;
@@ -72,14 +74,18 @@ public class ToonParser {
     // ========================================================================
 
     public ToonParser(Reader input) throws IOException {
-        this(input, 2, true);
+        this(input, 2, true, StreamReadConstraints.defaults());
     }
 
     public ToonParser(Reader input, int indentSize, boolean strictMode) throws IOException {
+        this(input, indentSize, strictMode, StreamReadConstraints.defaults());
+    }
+
+    public ToonParser(Reader input, int indentSize, boolean strictMode, StreamReadConstraints constraints) throws IOException {
         this._lexer = new ToonLexer(input, indentSize, strictMode);
         this._strictMode = strictMode;
         this._contextStack = new ArrayDeque<>();
-        this._context = new ParsingContext(); // Root context
+        this._context = new ParsingContext(constraints); // Root context with constraints
         this._state = State.NEED_CONTENT;
         this._rootParsed = false;
 
