@@ -87,12 +87,14 @@ public class ToonFactory extends JsonFactory {
 
     @Override
     public JsonParser createParser(String content) throws IOException {
-        return new ToonParserAdapter(new ToonParser(new StringReader(content)), _strictMode);
+        return new ToonParserAdapter(new ToonParser(new StringReader(content)), _strictMode,
+            StreamReadConstraints.defaults());
     }
 
     @Override
     public JsonParser createParser(Reader r) throws IOException {
-        return new ToonParserAdapter(new ToonParser(r), _strictMode);
+        return new ToonParserAdapter(new ToonParser(r), _strictMode,
+            StreamReadConstraints.defaults());
     }
 
     @Override
@@ -157,12 +159,14 @@ public class ToonFactory extends JsonFactory {
     private static class ToonParserAdapter extends JsonParser {
         private final ToonParser _toonParser;
         private final boolean _strictMode;
+        private final StreamReadConstraints _streamReadConstraints;
         private JsonToken _currentToken;
         private ToonParser.Event _currentEvent;
 
-        public ToonParserAdapter(ToonParser parser, boolean strictMode) {
+        public ToonParserAdapter(ToonParser parser, boolean strictMode, StreamReadConstraints constraints) {
             this._toonParser = parser;
             this._strictMode = strictMode;
+            this._streamReadConstraints = constraints;
         }
 
         @Override
@@ -297,7 +301,10 @@ public class ToonFactory extends JsonFactory {
                 return (java.math.BigInteger) n;
             }
             if (n instanceof java.math.BigDecimal) {
-                return ((java.math.BigDecimal) n).toBigInteger();
+                java.math.BigDecimal bd = (java.math.BigDecimal) n;
+                // Validate scale before conversion to prevent performance issues
+                _streamReadConstraints.validateBigIntegerScale(bd.scale());
+                return bd.toBigInteger();
             }
             return java.math.BigInteger.valueOf(n.longValue());
         }
