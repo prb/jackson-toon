@@ -1,6 +1,6 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.core.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -32,7 +32,7 @@ public class NestingDepthTest {
         // Should parse without errors
         int depth = 0;
         while (parser.nextToken() != null) {
-            if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
+            if (parser.currentToken() == JsonToken.START_OBJECT) {
                 depth++;
             }
         }
@@ -60,7 +60,7 @@ public class NestingDepthTest {
         // Should parse without errors
         int depth = 0;
         while (parser.nextToken() != null) {
-            if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
+            if (parser.currentToken() == JsonToken.START_OBJECT) {
                 depth++;
             }
         }
@@ -110,8 +110,8 @@ public class NestingDepthTest {
         ToonFactory factory = new ToonFactory();
         JsonParser parser = factory.createParser(toon.toString());
 
-        // Should throw IOException (wrapping StreamConstraintsException) when depth exceeds limit
-        IOException exception = assertThrows(IOException.class, () -> {
+        // Should throw JacksonException (StreamConstraintsException) when depth exceeds limit
+        JacksonException exception = assertThrows(JacksonException.class, () -> {
             while (parser.nextToken() != null) {
                 // Should fail before completing
             }
@@ -144,8 +144,8 @@ public class NestingDepthTest {
         ToonFactory factory = new ToonFactory();
         JsonParser parser = factory.createParser(toon.toString());
 
-        // Should throw IOException when depth exceeds limit
-        IOException exception = assertThrows(IOException.class, () -> {
+        // Should throw JacksonException (StreamConstraintsException) when depth exceeds limit
+        JacksonException exception = assertThrows(JacksonException.class, () -> {
             while (parser.nextToken() != null) {
                 // Should fail before completing
             }

@@ -1,7 +1,7 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.core.io.NumberInput;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.io.NumberInput;
 
 import java.io.IOException;
 import java.io.Reader;

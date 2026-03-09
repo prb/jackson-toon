@@ -1,4 +1,4 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

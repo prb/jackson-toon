@@ -1,4 +1,4 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
 import java.io.*;
 import java.util.*;
@@ -15,6 +15,7 @@ public class ToonGenerator implements Closeable {
     private GeneratorContext _context;
     private boolean _strictMode;
     private boolean _prettyPrint;
+    private boolean _closed = false;
 
     /**
      * Creates a new TOON generator.
@@ -590,19 +591,22 @@ public class ToonGenerator implements Closeable {
         }
     }
 
-    /**
-     * Flushes the output writer.
-     */
+    public void writeRaw(String text) throws IOException {
+        _writer.write(text);
+    }
+
     public void flush() throws IOException {
         _writer.flush();
     }
 
-    /**
-     * Closes the generator and underlying writer.
-     */
     @Override
     public void close() throws IOException {
+        _closed = true;
         flush();
         _writer.close();
+    }
+
+    public boolean isClosed() {
+        return _closed;
     }
 }

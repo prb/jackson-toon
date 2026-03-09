@@ -1,6 +1,6 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.core.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -24,7 +24,7 @@ public class JacksonIntegrationTest {
         while ((token = parser.nextToken()) != null && count++ < 20) {
             // Verify we can read tokens
             assertNotNull(token);
-            if (token == JsonToken.FIELD_NAME || token == JsonToken.VALUE_STRING) {
+            if (token == JsonToken.PROPERTY_NAME || token == JsonToken.VALUE_STRING) {
                 assertNotNull(parser.getText());
             } else if (token == JsonToken.VALUE_NUMBER_INT) {
                 assertTrue(parser.getIntValue() >= 0 || parser.getIntValue() < 0); // Valid int
@@ -41,11 +41,11 @@ public class JacksonIntegrationTest {
         JsonGenerator gen = factory.createGenerator(sw);
 
         gen.writeStartObject();
-        gen.writeFieldName("userId");
+        gen.writeName("userId");
         gen.writeNumber(456);
-        gen.writeFieldName("userName");
+        gen.writeName("userName");
         gen.writeString("Bob");
-        gen.writeFieldName("tags");
+        gen.writeName("tags");
         gen.writeStartArray();
         gen.writeString("admin");
         gen.writeString("developer");
@@ -68,13 +68,13 @@ public class JacksonIntegrationTest {
         JsonGenerator gen = factory.createGenerator(sw1);
 
         gen.writeStartObject();
-        gen.writeFieldName("product");
+        gen.writeName("product");
         gen.writeStartObject();
-        gen.writeFieldName("id");
+        gen.writeName("id");
         gen.writeNumber(789);
-        gen.writeFieldName("name");
+        gen.writeName("name");
         gen.writeString("Widget");
-        gen.writeFieldName("price");
+        gen.writeName("price");
         gen.writeNumber(19.99);
         gen.writeEndObject();
         gen.writeEndObject();
@@ -102,8 +102,8 @@ public class JacksonIntegrationTest {
                 case END_ARRAY:
                     gen2.writeEndArray();
                     break;
-                case FIELD_NAME:
-                    gen2.writeFieldName(parser.getText());
+                case PROPERTY_NAME:
+                    gen2.writeName(parser.getText());
                     break;
                 case VALUE_STRING:
                     gen2.writeString(parser.getText());
