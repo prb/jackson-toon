@@ -1,10 +1,10 @@
 # Jackson Dataformat TOON
 
-A production-ready Jackson 2.20.1 dataformat module for [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/spec) - a compact data format optimized for AI/LLM token efficiency.
+A production-ready Jackson 3.1.0 dataformat module for [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/spec) - a compact data format optimized for AI/LLM token efficiency.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Jackson Version](https://img.shields.io/badge/jackson-2.20.1-blue)]()
-[![Java Version](https://img.shields.io/badge/java-1.8%2B-orange)]()
+[![Jackson Version](https://img.shields.io/badge/jackson-3.1.0-blue)]()
+[![Java Version](https://img.shields.io/badge/java-17%2B-orange)]()
 [![Spec Compliance](https://img.shields.io/badge/spec%20compliance-90%25-green)]()
 
 ## What is TOON?
@@ -68,16 +68,16 @@ user:
 
 ```xml
 <dependency>
-    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <groupId>tools.jackson.dataformat</groupId>
     <artifactId>jackson-dataformat-toon</artifactId>
-    <version>2.20.1</version>
+    <version>3.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```gradle
-implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toon:2.20.1'
+implementation 'tools.jackson.dataformat:jackson-dataformat-toon:3.1.0'
 ```
 
 ## Quick Start
@@ -85,7 +85,7 @@ implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toon:2.20.1'
 ### Using ToonMapper (Recommended)
 
 ```java
-import com.fasterxml.jackson.dataformat.toon.ToonMapper;
+import tools.jackson.dataformat.toon.ToonMapper;
 
 // Create mapper
 ToonMapper mapper = new ToonMapper();
@@ -105,8 +105,8 @@ User parsed = mapper.readValue(toon, User.class);
 ### Using Jackson Factory
 
 ```java
-import com.fasterxml.jackson.dataformat.toon.ToonFactory;
-import com.fasterxml.jackson.core.*;
+import tools.jackson.dataformat.toon.ToonFactory;
+import tools.jackson.core.*;
 
 // Create factory
 ToonFactory factory = new ToonFactory();
@@ -135,7 +135,7 @@ System.out.println(writer.toString());
 ### Auto-Discovery
 
 ```java
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 ObjectMapper mapper = new ObjectMapper();
 mapper.findAndRegisterModules(); // Auto-discovers ToonFactory
@@ -306,7 +306,7 @@ mvn test
 ```
 jackson-toon/
 ├── src/
-│   ├── main/java/com/fasterxml/jackson/dataformat/toon/
+│   ├── main/java/tools/jackson/dataformat/toon/
 │   │   ├── ToonToken.java          - Token definitions
 │   │   ├── ToonLexer.java          - Character-level tokenizer
 │   │   ├── ToonParser.java         - Streaming parser
@@ -316,7 +316,7 @@ jackson-toon/
 │   │   ├── ToonFactory.java        - Jackson factory
 │   │   ├── ToonMapper.java         - ObjectMapper extension
 │   │   └── package-info.java       - Package documentation
-│   └── test/java/com/fasterxml/jackson/dataformat/toon/
+│   └── test/java/tools/jackson/dataformat/toon/
 │       └── *.java                  - 84 JUnit 5 tests
 ├── pom.xml                         - Maven build
 ├── README.md                       - This file
