@@ -94,6 +94,13 @@ public class ToonGenerator implements Closeable {
      * Writes a field name.
      */
     public void writeFieldName(String name) throws IOException {
+        writeName(name);
+    }
+
+    /**
+     * Writes a field name (Jackson 3 naming).
+     */
+    public void writeName(String name) throws IOException {
         if (!_context.isInObject()) {
             throw new IOException("Field name can only be written in object context");
         }
