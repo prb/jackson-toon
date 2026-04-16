@@ -1,6 +1,6 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.core.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -27,19 +27,19 @@ public class NumberInputTest {
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
 
         // small: 42
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals("small", parser.getText());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(42, parser.getIntValue());
 
         // large: 123456789
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals("large", parser.getText());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(123456789, parser.getIntValue());
 
         // negative: -999
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals("negative", parser.getText());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(-999, parser.getIntValue());
@@ -60,17 +60,17 @@ public class NumberInputTest {
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
 
         // decimal: 3.14
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_FLOAT, parser.nextToken());
         assertEquals(3.14, parser.getDoubleValue(), 0.001);
 
         // scientific: 1.23e10
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_FLOAT, parser.nextToken());
         assertEquals(1.23e10, parser.getDoubleValue(), 0.001);
 
         // negExp: 5.67E-8
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_FLOAT, parser.nextToken());
         assertEquals(5.67E-8, parser.getDoubleValue(), 0.001e-8);
 
@@ -88,7 +88,7 @@ public class NumberInputTest {
         JsonParser parser = factory.createParser(toon);
 
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(9223372036854775807L, parser.getLongValue());
 
@@ -108,17 +108,17 @@ public class NumberInputTest {
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
 
         // zero: 0
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(0, parser.getIntValue());
 
         // decZero: 0.0
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_FLOAT, parser.nextToken());
         assertEquals(0.0, parser.getDoubleValue(), 0.001);
 
         // negZero: -0
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(0, parser.getIntValue());
 
@@ -151,17 +151,17 @@ public class NumberInputTest {
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
 
         // negInt: -42
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(-42, parser.getIntValue());
 
         // negFloat: -3.14
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_FLOAT, parser.nextToken());
         assertEquals(-3.14, parser.getDoubleValue(), 0.001);
 
         // negLarge: -9999999999
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
         assertEquals(-9999999999L, parser.getLongValue());
 
@@ -179,7 +179,7 @@ public class NumberInputTest {
         JsonParser parser = factory.createParser(toon);
 
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.START_ARRAY, parser.nextToken());
 
         for (int i = 1; i <= 5; i++) {

@@ -1,4 +1,4 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
 import org.junit.jupiter.api.*;
 
@@ -33,9 +33,9 @@ public class GenerationTest {
             ToonGenerator gen = new ToonGenerator(sw);
 
             gen.writeStartObject();
-            gen.writeFieldName("id");
+            gen.writeName("id");
             gen.writeNumber(123);
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeString("Alice");
             gen.writeEndObject();
             gen.flush();
@@ -55,11 +55,11 @@ public class GenerationTest {
             ToonGenerator gen = new ToonGenerator(sw);
 
             gen.writeStartObject();
-            gen.writeFieldName("user");
+            gen.writeName("user");
             gen.writeStartObject();
-            gen.writeFieldName("id");
+            gen.writeName("id");
             gen.writeNumber(123);
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeString("Alice");
             gen.writeEndObject();
             gen.writeEndObject();
@@ -81,9 +81,9 @@ public class GenerationTest {
             ToonGenerator gen = new ToonGenerator(sw);
 
             gen.writeStartObject();
-            gen.writeFieldName("active");
+            gen.writeName("active");
             gen.writeBoolean(true);
-            gen.writeFieldName("deleted");
+            gen.writeName("deleted");
             gen.writeBoolean(false);
             gen.writeEndObject();
             gen.flush();
@@ -107,7 +107,7 @@ public class GenerationTest {
             ToonGenerator gen = new ToonGenerator(sw);
 
             gen.writeStartObject();
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeNull();
             gen.writeEndObject();
             gen.flush();
@@ -280,11 +280,11 @@ public class GenerationTest {
             ToonGenerator gen = new ToonGenerator(sw);
 
             gen.writeStartObject();
-            gen.writeFieldName("id");
+            gen.writeName("id");
             gen.writeNumber(42);
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeString("Bob");
-            gen.writeFieldName("active");
+            gen.writeName("active");
             gen.writeBoolean(true);
             gen.writeEndObject();
             gen.flush();
@@ -385,14 +385,14 @@ public class GenerationTest {
             ToonGenerator gen = new ToonGenerator(sw);
 
             gen.writeStartObject();
-            gen.writeFieldName("user");
+            gen.writeName("user");
             gen.writeStartObject();
-            gen.writeFieldName("id");
+            gen.writeName("id");
             gen.writeNumber(100);
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeString("Charlie");
             gen.writeEndObject();
-            gen.writeFieldName("tags");
+            gen.writeName("tags");
             gen.writeStartArray();
             gen.writeString("admin");
             gen.writeString("user");
@@ -447,16 +447,16 @@ public class GenerationTest {
             gen.writeStartArray();
 
             gen.writeStartObject();
-            gen.writeFieldName("id");
+            gen.writeName("id");
             gen.writeNumber(1);
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeString("First");
             gen.writeEndObject();
 
             gen.writeStartObject();
-            gen.writeFieldName("id");
+            gen.writeName("id");
             gen.writeNumber(2);
-            gen.writeFieldName("name");
+            gen.writeName("name");
             gen.writeString("Second");
             gen.writeEndObject();
 

@@ -1,7 +1,6 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.core.exc.StreamConstraintsException;
+import tools.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
 
@@ -99,7 +98,9 @@ public class ParsingContext {
      */
     public ParsingContext createChildObject(int indentLevel) throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.OBJECT, this, indentLevel, childDepth,
                                  _streamReadConstraints, 0, null, _delimiter);
     }
@@ -109,72 +110,56 @@ public class ParsingContext {
      */
     public ParsingContext createChildInlineArray(int length, char delimiter) throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.ARRAY_INLINE, this, _expectedIndentLevel,
                                  childDepth, _streamReadConstraints, length, null, delimiter);
     }
 
-    /**
-     * Creates a child tabular array context.
-     */
     public ParsingContext createChildTabularArray(int length, String[] fields, char delimiter) throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.ARRAY_TABULAR, this, _expectedIndentLevel,
                                  childDepth, _streamReadConstraints, length, fields, delimiter);
     }
 
-    /**
-     * Creates a child list array context.
-     */
     public ParsingContext createChildListArray(int length) throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.ARRAY_LIST, this, _expectedIndentLevel,
                                  childDepth, _streamReadConstraints, length, null, _delimiter);
     }
 
-    /**
-     * Creates a tabular row context.
-     */
     public ParsingContext createTabularRow() throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.TABULAR_ROW, this, _expectedIndentLevel,
                                  childDepth, _streamReadConstraints, _fieldNames.length, _fieldNames, _delimiter);
     }
 
-    /**
-     * Creates a list item context.
-     */
     public ParsingContext createListItem() throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.LIST_ITEM, this, _expectedIndentLevel,
                                  childDepth, _streamReadConstraints, 0, null, _delimiter);
     }
 
-    /**
-     * Creates a list item object context.
-     */
     public ParsingContext createListItemObject(int indentLevel) throws IOException {
         int childDepth = _nestingDepth + 1;
-        validateNestingDepth(childDepth);
+        if (_streamReadConstraints != null) {
+            _streamReadConstraints.validateNestingDepth(childDepth);
+        }
         return new ParsingContext(Type.LIST_ITEM_OBJECT, this, indentLevel,
                                  childDepth, _streamReadConstraints, 0, null, _delimiter);
-    }
-
-    /**
-     * Validates that the nesting depth does not exceed the maximum allowed.
-     */
-    private void validateNestingDepth(int depth) throws IOException {
-        if (_streamReadConstraints != null) {
-            try {
-                _streamReadConstraints.validateNestingDepth(depth);
-            } catch (StreamConstraintsException e) {
-                throw new IOException(e.getMessage(), e);
-            }
-        }
     }
 
     // Getters

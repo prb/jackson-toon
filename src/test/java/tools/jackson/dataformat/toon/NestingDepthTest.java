@@ -1,6 +1,6 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.core.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class NestingDepthTest {
 
     /**
-     * Test that normal nesting depth (well under 1000) works fine.
+     * Test that normal nesting depth (well under 500) works fine.
      */
     @Test
     void testNormalNestingDepth() throws IOException {
@@ -32,7 +32,7 @@ public class NestingDepthTest {
         // Should parse without errors
         int depth = 0;
         while (parser.nextToken() != null) {
-            if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
+            if (parser.currentToken() == JsonToken.START_OBJECT) {
                 depth++;
             }
         }
@@ -60,7 +60,7 @@ public class NestingDepthTest {
         // Should parse without errors
         int depth = 0;
         while (parser.nextToken() != null) {
-            if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
+            if (parser.currentToken() == JsonToken.START_OBJECT) {
                 depth++;
             }
         }
@@ -71,13 +71,13 @@ public class NestingDepthTest {
     }
 
     /**
-     * Test that depth just under the limit (999) works fine.
+     * Test that depth just under the limit (499) works fine.
      */
     @Test
     void testNestingDepthJustUnderLimit() throws IOException {
-        // Create a structure with 999 levels of nesting
+        // Create a structure with 499 levels of nesting
         StringBuilder toon = new StringBuilder();
-        for (int i = 1; i <= 999; i++) {
+        for (int i = 1; i <= 499; i++) {
             toon.append("  ".repeat(Math.min(i - 1, 100))).append("l").append(i).append(":\n");
         }
         toon.append("  ".repeat(100)).append("value: 999");
@@ -85,7 +85,7 @@ public class NestingDepthTest {
         ToonFactory factory = new ToonFactory();
         JsonParser parser = factory.createParser(toon.toString());
 
-        // Should parse without errors (999 is under the default limit of 1000)
+        // Should parse without errors (499 is under the default limit of 500)
         assertDoesNotThrow(() -> {
             while (parser.nextToken() != null) {
                 // Just consume tokens
@@ -100,18 +100,18 @@ public class NestingDepthTest {
      */
     @Test
     void testNestingDepthExceedsLimit() throws IOException {
-        // Create a structure with 1001 levels of nesting (exceeds default 1000 limit)
+        // Create a structure with 501 levels of nesting (exceeds default 1000 limit)
         StringBuilder toon = new StringBuilder();
-        for (int i = 1; i <= 1001; i++) {
+        for (int i = 1; i <= 501; i++) {
             toon.append("  ".repeat(Math.min(i - 1, 100))).append("l").append(i).append(":\n");
         }
-        toon.append("  ".repeat(100)).append("value: 1001");
+        toon.append("  ".repeat(100)).append("value: 501");
 
         ToonFactory factory = new ToonFactory();
         JsonParser parser = factory.createParser(toon.toString());
 
-        // Should throw IOException (wrapping StreamConstraintsException) when depth exceeds limit
-        IOException exception = assertThrows(IOException.class, () -> {
+        // Should throw JacksonException (StreamConstraintsException) when depth exceeds limit
+        JacksonException exception = assertThrows(JacksonException.class, () -> {
             while (parser.nextToken() != null) {
                 // Should fail before completing
             }
@@ -133,9 +133,9 @@ public class NestingDepthTest {
         // Create deeply nested arrays using inline arrays
         StringBuilder toon = new StringBuilder();
         toon.append("data:\n");
-        for (int i = 1; i <= 1001; i++) {
+        for (int i = 1; i <= 501; i++) {
             toon.append("  ".repeat(Math.min(i, 100))).append("nested").append(i).append("[1]: item");
-            if (i < 1001) {
+            if (i < 501) {
                 toon.append("\n");
                 toon.append("  ".repeat(Math.min(i, 100))).append("next:\n");
             }
@@ -144,8 +144,8 @@ public class NestingDepthTest {
         ToonFactory factory = new ToonFactory();
         JsonParser parser = factory.createParser(toon.toString());
 
-        // Should throw IOException when depth exceeds limit
-        IOException exception = assertThrows(IOException.class, () -> {
+        // Should throw JacksonException (StreamConstraintsException) when depth exceeds limit
+        JacksonException exception = assertThrows(JacksonException.class, () -> {
             while (parser.nextToken() != null) {
                 // Should fail before completing
             }

@@ -1,6 +1,6 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.StreamReadConstraints;
+import tools.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
 import java.io.Reader;

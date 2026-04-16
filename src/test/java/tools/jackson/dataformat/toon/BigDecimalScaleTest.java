@@ -1,7 +1,7 @@
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.exc.StreamConstraintsException;
+import tools.jackson.core.*;
+import tools.jackson.core.exc.StreamConstraintsException;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -30,7 +30,7 @@ public class BigDecimalScaleTest {
 
         // Navigate to the value
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals("value", parser.getText());
         assertEquals(JsonToken.VALUE_NUMBER_FLOAT, parser.nextToken());
 
@@ -126,7 +126,7 @@ public class BigDecimalScaleTest {
 
         // Navigate to the value
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals(JsonToken.PROPERTY_NAME, parser.nextToken());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
 
         // This should work fine - normal integer value

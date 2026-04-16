@@ -88,7 +88,7 @@
  *   - cherry
  * </pre>
  *
- * @see com.fasterxml.jackson.dataformat.toon.ToonFactory
- * @see com.fasterxml.jackson.dataformat.toon.ToonMapper
+ * @see tools.jackson.dataformat.toon.ToonFactory
+ * @see tools.jackson.dataformat.toon.ToonMapper
  */
-package com.fasterxml.jackson.dataformat.toon;
+package tools.jackson.dataformat.toon;
